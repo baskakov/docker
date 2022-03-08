@@ -1,0 +1,76 @@
+version: '3'
+services:
+
+  mongo:
+    container_name: prod_mongo
+    image: mongo:4.2
+    restart: unless-stopped
+    command: mongod --auth --oplogSize 128 --replSet rs0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_DB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_DB_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
+      - MONGODB_DATA_DIR=/data/mongodb
+      - MONDODB_LOG_DIR=/dev/null
+    volumes:
+      - ./init/:/docker-entrypoint-initdb.d
+      - mongodb:/data/mongodb
+    #    ports:
+    #      - 27017:27017
+    networks:
+      - backend
+
+  ##run once then comment
+  #mongo-init-replica:
+  #  image: mongo:4.2
+  #  command: >
+  #    bash -c
+  #      "for i in `seq 1 30`; do
+  #        mongo mongo/rocketchat -u root -p 6smREBVGTpYuc --authenticationDatabase admin --eval \"
+  #          rs.initiate({
+  #            _id: 'rs0',
+  #            members: [ { _id: 0, host: 'localhost:27017' } ]})\" &&
+  #        s=$$? && break || s=$$?;
+  #        echo \"Tried $$i times. Waiting 5 secs...\";
+  #        sleep 5;
+  #      done; (exit $$s)"
+  #  depends_on:
+  #    - mongo
+  #  networks:
+  #    - backend
+
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:4.4.1
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          node main.js &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit $$s)"
+    restart: unless-stopped
+    volumes:
+      - chat:/app/uploads
+    environment:
+      - PORT=3000
+      - ROOT_URL=${CHAT_URL}
+      - MONGO_URL=mongodb://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@mongo:27017/${MONGO_DB_NAME}?authSource=admin
+      - MONGO_OPLOG_URL=mongodb://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@mongo:27017/local?authSource=admin
+      - Accounts_UseDNSDomainCheck=false
+    container_name: prod_rocketchat
+    depends_on:
+      - mongo
+    ports:
+      - 3000:3000
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  mongodb:
+    driver: local
+  chat:
+    driver: local
