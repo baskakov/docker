@@ -1,0 +1,15 @@
+version: '3'
+services:
+  website:
+    container_name: website
+    build:
+      context: .
+    image: website:latest
+    ports:
+      - "80:80"
+    environment:
+      APP_DB_HOST: ${APP_DB_HOST}
+      APP_DB_DATABASE: ${APP_DB_DATABASE}
+      APP_DB_USERNAME: ${APP_DB_USERNAME}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}x

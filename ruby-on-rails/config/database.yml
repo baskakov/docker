@@ -1,0 +1,9 @@
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: <%= ENV["APP_DB_DATABASE"] %>
+  username: <%= ENV["APP_DB_USERNAME"] %>
+  password: <%= ENV["APP_DB_PASSWORD"] %>
+  host: <%= ENV["APP_DB_HOST"] || "localhost" %>
+  port: <%= ENV["APP_DB_PORT"] || 5432 %>
+  timeout: 10000
